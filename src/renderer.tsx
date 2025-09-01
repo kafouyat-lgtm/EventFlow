@@ -6,23 +6,23 @@ export const renderer = jsxRenderer(({ children }) => {
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <meta name="description" content="Kafouyat Events - Plateforme d'événements corporate nationaux et internationaux. Découvrez les événements les plus importants du monde des affaires." />
-        <meta name="keywords" content="événements corporate, business events, conférences, séminaires, kafouyat, national, international" />
-        <meta name="author" content="Kafouyat Team" />
-        <meta name="copyright" content="© 2025 Kafouyat. Tous droits réservés." />
+        <meta name="description" content="EventFlow - Plateforme d'événements corporate nationaux et internationaux. Découvrez les événements les plus importants du monde des affaires." />
+        <meta name="keywords" content="événements corporate, business events, conférences, séminaires, eventflow, national, international" />
+        <meta name="author" content="EventFlow Team" />
+        <meta name="copyright" content="© 2025 EventFlow. Tous droits réservés." />
         
         {/* Open Graph */}
-        <meta property="og:title" content="Kafouyat Events - Événements Corporate" />
+        <meta property="og:title" content="EventFlow - Événements Corporate" />
         <meta property="og:description" content="Découvrez les événements corporate les plus importants - Nationaux et Internationaux" />
         <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="Kafouyat Events" />
+        <meta property="og:site_name" content="EventFlow" />
         
         {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Kafouyat Events" />
-        <meta name="twitter:description" content="Plateforme d'événements corporate - Tous droits réservés à Kafouyat" />
+        <meta name="twitter:title" content="EventFlow" />
+        <meta name="twitter:description" content="EventFlow - Plateforme d'événements corporate nationaux et internationaux" />
         
-        <title>Kafouyat Events - Événements Corporate Nationaux & Internationaux</title>
+        <title>EventFlow - Événements Corporate Nationaux & Internationaux</title>
         
         {/* Favicon */}
         <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />

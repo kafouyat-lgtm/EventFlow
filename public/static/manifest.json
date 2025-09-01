@@ -1,7 +1,7 @@
 {
-  "name": "Kafouyat Events",
-  "short_name": "Kafouyat",
-  "description": "Plateforme d'événements corporate nationaux et internationaux - Tous droits réservés à Kafouyat",
+  "name": "EventFlow",
+  "short_name": "EventFlow",
+  "description": "EventFlow - Le flux d'événements corporate en temps réel",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -65,14 +65,14 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "Accueil Kafouyat Events"
+      "label": "Accueil EventFlow"
     },
     {
       "src": "/static/screenshots/mobile-1.png",
       "sizes": "360x640",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Vue mobile Kafouyat Events"
+      "label": "Vue mobile EventFlow"
     }
   ],
   "shortcuts": [

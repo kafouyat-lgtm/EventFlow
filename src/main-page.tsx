@@ -1,4 +1,4 @@
-// 🏠 Page principale Kafouyat Events
+// 🏠 Page principale EventFlow
 
 export const MainPage = () => (
   <div class="min-h-screen bg-gray-50">
@@ -11,8 +11,8 @@ export const MainPage = () => (
               <i class="fas fa-calendar-alt text-2xl"></i>
             </div>
             <div>
-              <h1 class="text-3xl font-bold text-gray-900">Kafouyat Events</h1>
-              <p class="text-gray-600">Plateforme d'événements corporate - Tous droits réservés</p>
+              <h1 class="text-3xl font-bold text-gray-900">EventFlow</h1>
+              <p class="text-gray-600">Le flux d'événements corporate en temps réel</p>
             </div>
           </div>
           <div class="hidden md:flex space-x-4">
@@ -174,13 +174,13 @@ export const MainPage = () => (
     <footer class="bg-gray-900 text-white py-12">
       <div class="max-w-7xl mx-auto px-4 text-center">
         <div class="mb-6">
-          <h4 class="text-2xl font-bold mb-2">Kafouyat Events</h4>
+          <h4 class="text-2xl font-bold mb-2">EventFlow</h4>
           <p class="text-gray-400">Plateforme d'événements corporate</p>
         </div>
         
         <div class="border-t border-gray-800 pt-6">
           <p class="text-sm text-gray-400">
-            © 2025 Kafouyat. Tous droits réservés. | Plateforme d'événements corporate nationaux et internationaux.
+            © 2025 EventFlow. Tous droits réservés. | Le flux d'événements corporate en temps réel.
           </p>
         </div>
       </div>

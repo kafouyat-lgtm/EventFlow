@@ -1,12 +1,12 @@
-// 🚀 PM2 Configuration pour Kafouyat Events
-// Tous droits réservés à Kafouyat
+// 🚀 PM2 Configuration pour EventFlow
+// Plateforme d'événements corporate
 
 module.exports = {
   apps: [
     {
-      name: 'kafouyat-events',
+      name: 'eventflow',
       script: 'npx',
-      args: 'wrangler pages dev dist --d1=kafouyat-events-production --local --ip 0.0.0.0 --port 3000',
+      args: 'wrangler pages dev dist --d1=eventflow-production --local --ip 0.0.0.0 --port 3000',
       env: {
         NODE_ENV: 'development',
         PORT: 3000

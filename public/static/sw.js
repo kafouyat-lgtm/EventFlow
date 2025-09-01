@@ -12,7 +12,7 @@ const urlsToCache = [
 
 // Installation du Service Worker
 self.addEventListener('install', (event) => {
-  console.log('🔧 Installation du Service Worker Kafouyat');
+  console.log('🔧 Installation du Service Worker EventFlow');
   
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -29,7 +29,7 @@ self.addEventListener('install', (event) => {
 
 // Activation du Service Worker
 self.addEventListener('activate', (event) => {
-  console.log('🚀 Activation du Service Worker Kafouyat');
+  console.log('🚀 Activation du Service Worker EventFlow');
   
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -114,7 +114,7 @@ self.addEventListener('push', (event) => {
     }
   } else {
     notificationData = {
-      title: 'Kafouyat Events',
+      title: 'EventFlow',
       body: 'Découvrez les nouveaux événements corporate',
       icon: '/static/icons/icon-192x192.png',
       badge: '/static/icons/badge-72x72.png'
@@ -270,4 +270,4 @@ async function clearLocalPendingAnalytics() {
   // Implémenter le nettoyage des analytics locaux
 }
 
-console.log('🔔 Service Worker Kafouyat Events chargé');
+console.log('🔔 Service Worker EventFlow chargé');
