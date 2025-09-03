@@ -1,4 +1,4 @@
-// 🚀 EventFlow - Frontend JavaScript
+// 🚀 EventFlow - Frontend JavaScript CORRIGÉ
 // Plateforme d'événements corporate
 
 class EventFlowApp {
@@ -6,7 +6,7 @@ class EventFlowApp {
         this.currentOffset = 0;
         this.isLoading = false;
         this.userIdentifier = this.getUserIdentifier();
-        this.notificationSupported = 'Notification' in window && 'serviceWorker' in navigator;
+        this.eventsData = null;
         
         this.init();
     }
@@ -15,30 +15,28 @@ class EventFlowApp {
     async init() {
         console.log('🚀 Initialisation de EventFlow');
         
-        // Charger les statistiques
-        await this.loadStats();
+        // Charger les données d'événements
+        await this.loadEventsData();
+        
+        // Charger les statistiques calculées
+        this.loadStats();
         
         // Charger les options de filtres
-        await this.loadFilterOptions();
+        this.loadFilterOptions();
         
         // Charger les événements à la une
-        await this.loadFeaturedEvents();
+        this.loadFeaturedEvents();
         
-        // Charger les événements principaux
-        await this.loadEvents();
+        // Charger tous les événements
+        this.loadEvents();
         
         // Configurer les event listeners
         this.setupEventListeners();
         
-        // Initialiser les notifications push (si supportées)
-        if (this.notificationSupported) {
-            this.initializeNotifications();
-        }
-        
         console.log('✅ EventFlow initialisé avec succès');
     }
 
-    // 👤 Gestion de l'identifiant utilisateur (pour favoris et notifications)
+    // 👤 Gestion de l'identifiant utilisateur
     getUserIdentifier() {
         let userId = localStorage.getItem('eventflow_user_id');
         if (!userId) {
@@ -48,324 +46,264 @@ class EventFlowApp {
         return userId;
     }
 
-    // 📊 Charger les statistiques globales
-    async loadStats() {
+    // 📦 Charger les données d'événements
+    async loadEventsData() {
         try {
             const response = await fetch('/events.json');
             const data = await response.json();
-            
-            if (data.stats) {
-                document.getElementById('total-events').textContent = data.stats.totalEvents.toLocaleString();
-                document.getElementById('total-countries').textContent = data.stats.totalCountries.toLocaleString();
-                document.getElementById('upcoming-events').textContent = data.stats.upcomingEvents.toLocaleString();
-                document.getElementById('total-sectors').textContent = data.stats.totalSectors.toLocaleString();
-                
-                // Animation des compteurs
-                this.animateCounters();
-            }
+            this.eventsData = data.events || [];
+            console.log('✅ Données chargées:', this.eventsData.length, 'événements');
         } catch (error) {
-            console.error('❌ Erreur lors du chargement des statistiques:', error);
+            console.error('❌ Erreur lors du chargement des données:', error);
+            this.eventsData = [];
         }
     }
 
-    // ✨ Animation des compteurs de statistiques
-    animateCounters() {
-        const counters = document.querySelectorAll('#total-events, #total-countries, #upcoming-events, #total-sectors');
-        
-        counters.forEach(counter => {
-            const target = parseInt(counter.textContent.replace(/,/g, ''));
-            let current = 0;
-            const increment = target / 100;
-            const timer = setInterval(() => {
-                current += increment;
-                if (current >= target) {
-                    current = target;
-                    clearInterval(timer);
-                }
-                counter.textContent = Math.floor(current).toLocaleString();
-            }, 20);
-        });
+    // 📊 Calculer et afficher les statistiques
+    loadStats() {
+        if (!this.eventsData) return;
+
+        const stats = {
+            totalEvents: this.eventsData.length,
+            totalCountries: [...new Set(this.eventsData.map(e => e.country))].length,
+            upcomingEvents: this.eventsData.filter(e => new Date(e.start_date) > new Date()).length,
+            totalSectors: [...new Set(this.eventsData.map(e => e.company_sector))].length
+        };
+
+        // Mise à jour des éléments HTML
+        const totalEventsEl = document.getElementById('total-events');
+        const totalCountriesEl = document.getElementById('total-countries');
+        const upcomingEventsEl = document.getElementById('upcoming-events');
+        const totalSectorsEl = document.getElementById('total-sectors');
+
+        if (totalEventsEl) totalEventsEl.textContent = stats.totalEvents;
+        if (totalCountriesEl) totalCountriesEl.textContent = stats.totalCountries;
+        if (upcomingEventsEl) upcomingEventsEl.textContent = stats.upcomingEvents;
+        if (totalSectorsEl) totalSectorsEl.textContent = stats.totalSectors;
+
+        console.log('📊 Statistiques:', stats);
     }
 
-    // 🏷️ Charger les options de filtres dynamiquement
-    async loadFilterOptions() {
-        try {
-            // Charger les pays disponibles
-            const response = await fetch('/events.json');
-            const data = await response.json();
-            
-            if (data.events) {
-                const countries = [...new Set(data.events.map(e => e.country))];
-                const sectors = [...new Set(data.events.map(e => e.company_sector))];
-                
-                this.populateSelect('country-filter', countries);
-                this.populateSelect('sector-filter', sectors);
-            }
-        } catch (error) {
-            console.error('❌ Erreur lors du chargement des options de filtres:', error);
+    // 🏷️ Charger les options de filtres
+    loadFilterOptions() {
+        if (!this.eventsData) return;
+
+        const countries = [...new Set(this.eventsData.map(e => e.country))];
+        const sectors = [...new Set(this.eventsData.map(e => e.company_sector))];
+        const eventTypes = [...new Set(this.eventsData.map(e => e.event_type))];
+
+        // Remplir le filtre par pays
+        const countryFilter = document.getElementById('country-filter');
+        if (countryFilter) {
+            countryFilter.innerHTML = '<option value="">Tous les pays</option>';
+            countries.forEach(country => {
+                countryFilter.innerHTML += `<option value="${country}">${country}</option>`;
+            });
         }
-    }
 
-    // 📋 Remplir un élément select avec des options
-    populateSelect(selectId, options) {
-        const select = document.getElementById(selectId);
-        options.sort().forEach(option => {
-            const optionElement = document.createElement('option');
-            optionElement.value = option;
-            optionElement.textContent = option;
-            select.appendChild(optionElement);
-        });
+        // Remplir le filtre par secteur
+        const sectorFilter = document.getElementById('sector-filter');
+        if (sectorFilter) {
+            sectorFilter.innerHTML = '<option value="">Tous les secteurs</option>';
+            sectors.forEach(sector => {
+                sectorFilter.innerHTML += `<option value="${sector}">${sector}</option>`;
+            });
+        }
+
+        // Remplir le filtre par type
+        const typeFilter = document.getElementById('type-filter');
+        if (typeFilter) {
+            typeFilter.innerHTML = '<option value="">Tous les types</option>';
+            eventTypes.forEach(type => {
+                const typeLabel = type === 'conference' ? 'Conférence' : 
+                                type === 'networking' ? 'Networking' : 
+                                type === 'salon' ? 'Salon' : type;
+                typeFilter.innerHTML += `<option value="${type}">${typeLabel}</option>`;
+            });
+        }
+
+        console.log('🏷️ Filtres chargés');
     }
 
     // ⭐ Charger les événements à la une
-    async loadFeaturedEvents() {
-        try {
-            const response = await fetch('/events.json');
-            const data = await response.json();
-            
-            if (data.events) {
-                const container = document.getElementById('featured-events');
-                container.innerHTML = '';
-                
-                const featuredEvents = data.events.filter(event => event.featured === 1).slice(0, 6);
-                featuredEvents.forEach(event => {
-                    const eventCard = this.createFeaturedEventCard(event);
-                    container.appendChild(eventCard);
-                });
-            }
-        } catch (error) {
-            console.error('❌ Erreur lors du chargement des événements à la une:', error);
-        }
-    }
+    loadFeaturedEvents() {
+        if (!this.eventsData) return;
 
-    // 🎟️ Créer une carte d'événement à la une
-    createFeaturedEventCard(event) {
-        const div = document.createElement('div');
-        div.className = 'bg-white rounded-2xl shadow-xl overflow-hidden transform hover:scale-105 transition-all duration-300 border-2 border-yellow-200';
+        const featuredEvents = this.eventsData.filter(e => e.featured === 1).slice(0, 3);
+        const container = document.getElementById('featured-events');
         
-        const startDate = new Date(event.start_date);
-        const endDate = new Date(event.end_date);
-        const isInternational = event.scope === 'international';
-        
-        div.innerHTML = `
-            <div class="relative">
-                <div class="bg-gradient-to-r ${isInternational ? 'from-purple-500 to-pink-500' : 'from-blue-500 to-green-500'} text-white p-4">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-xs font-bold">
-                            <i class="fas fa-star mr-1"></i>À LA UNE
-                        </span>
-                        <span class="bg-white/20 px-3 py-1 rounded-full text-xs">
-                            <i class="fas fa-${isInternational ? 'globe' : 'flag'} mr-1"></i>
-                            ${isInternational ? 'International' : 'National'}
-                        </span>
-                    </div>
-                    <h4 class="font-bold text-lg mb-1 line-clamp-2">${event.title}</h4>
-                    <p class="text-sm opacity-90">${event.company_name}</p>
-                </div>
-                
+        if (!container) return;
+
+        container.innerHTML = featuredEvents.map(event => `
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
                 <div class="p-6">
-                    <div class="flex items-center text-gray-600 mb-3">
-                        <i class="fas fa-map-marker-alt mr-2 text-red-500"></i>
-                        <span class="text-sm">${event.city}, ${event.country}</span>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                            ${event.company_sector}
+                        </span>
+                        <span class="text-gray-500 text-sm">
+                            ${new Date(event.start_date).toLocaleDateString('fr-FR')}
+                        </span>
                     </div>
-                    
-                    <div class="flex items-center text-gray-600 mb-3">
-                        <i class="fas fa-calendar-alt mr-2 text-blue-500"></i>
-                        <span class="text-sm">${this.formatDate(startDate)} - ${this.formatDate(endDate)}</span>
-                    </div>
-                    
-                    <div class="flex items-center text-gray-600 mb-4">
-                        <i class="fas fa-tag mr-2 text-green-500"></i>
-                        <span class="text-sm">${event.company_sector}</span>
-                    </div>
-                    
-                    <p class="text-gray-700 text-sm mb-4 line-clamp-3">${event.description}</p>
-                    
-                    <div class="flex justify-between items-center">
-                        <div class="text-lg font-bold text-green-600">
-                            ${event.registration_fee ? `${event.registration_fee}€` : 'Gratuit'}
+                    <h3 class="text-xl font-bold text-gray-900 mb-2">${event.title}</h3>
+                    <p class="text-gray-600 mb-4 line-clamp-2">${event.description}</p>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-map-marker-alt mr-2"></i>
+                            <span>${event.city}, ${event.country}</span>
                         </div>
-                        <div class="flex space-x-2">
-                            <button onclick="app.toggleFavorite(${event.id}, this)" 
-                                    class="bg-pink-100 text-pink-600 p-2 rounded-full hover:bg-pink-200 transition-colors">
-                                <i class="fas fa-heart"></i>
-                            </button>
-                            <button onclick="app.shareEvent(${event.id})" 
-                                    class="bg-blue-100 text-blue-600 p-2 rounded-full hover:bg-blue-200 transition-colors">
-                                <i class="fas fa-share-alt"></i>
-                            </button>
+                        <div class="text-blue-600 font-bold">
+                            ${event.registration_fee === 0 ? 'Gratuit' : `${event.registration_fee}€`}
                         </div>
-                    </div>
-                    
-                    <div class="mt-4">
-                        <a href="${event.registration_url || '#'}" 
-                           class="block text-center bg-gradient-to-r ${isInternational ? 'from-purple-600 to-pink-600' : 'from-blue-600 to-green-600'} text-white py-3 rounded-lg hover:opacity-90 transition-opacity font-semibold">
-                            <i class="fas fa-ticket-alt mr-2"></i>S'inscrire maintenant
-                        </a>
                     </div>
                 </div>
             </div>
-        `;
-        
-        return div;
+        `).join('');
+
+        console.log('⭐ Événements à la une chargés:', featuredEvents.length);
     }
 
-    // 📅 Charger les événements avec filtres
-    async loadEvents(append = false) {
-        if (this.isLoading) return;
-        
-        this.isLoading = true;
-        
-        try {
-            const response = await fetch('/events.json');
-            const data = await response.json();
-            
-            if (data.events) {
-                // Appliquer les filtres côté client
-                const search = document.getElementById('search-input').value.toLowerCase();
-                const country = document.getElementById('country-filter').value;
-                const sector = document.getElementById('sector-filter').value;
-                const type = document.getElementById('type-filter').value;
-                const scope = document.getElementById('scope-filter').value;
-                
-                let filteredEvents = data.events.filter(event => {
-                    // Filtres
-                    if (country && event.country !== country) return false;
-                    if (sector && event.company_sector !== sector) return false;
-                    if (type && event.event_type !== type) return false;
-                    if (scope && event.scope !== scope) return false;
-                    
-                    // Recherche textuelle
-                    if (search) {
-                        const searchFields = [
-                            event.title,
-                            event.description,
-                            event.company_name,
-                            event.company_sector
-                        ].join(' ').toLowerCase();
-                        
-                        if (!searchFields.includes(search)) return false;
-                    }
-                    
-                    return true;
-                });
-                
-                const container = document.getElementById('events-list');
-                
-                if (!append) {
-                    container.innerHTML = '';
-                    this.currentOffset = 0;
-                }
-                
-                // Pagination côté client
-                const limit = 10;
-                const eventsToShow = filteredEvents.slice(this.currentOffset, this.currentOffset + limit);
-                
-                eventsToShow.forEach(event => {
-                    const eventElement = this.createEventListItem(event);
-                    container.appendChild(eventElement);
-                });
-                
-                // Mettre à jour l'offset
-                this.currentOffset += eventsToShow.length;
-                
-                // Gérer le bouton \"Charger plus\"
-                const loadMoreBtn = document.getElementById('load-more-btn');
-                if (this.currentOffset >= filteredEvents.length) {
-                    loadMoreBtn.style.display = 'none';
-                } else {
-                    loadMoreBtn.style.display = 'block';
-                }
-                
-                // Animation d'apparition
-                if (append) {
-                    const newCards = container.querySelectorAll('.event-card:nth-last-child(-n+' + eventsToShow.length + ')');
-                    newCards.forEach((card, index) => {
-                        card.style.opacity = '0';
-                        card.style.transform = 'translateY(20px)';
-                        setTimeout(() => {
-                            card.style.transition = 'all 0.5s ease';
-                            card.style.opacity = '1';
-                            card.style.transform = 'translateY(0)';
-                        }, index * 100);
-                    });
-                }
-            }
-        } catch (error) {
-            console.error('❌ Erreur lors du chargement des événements:', error);
+    // 📅 Charger tous les événements
+    loadEvents(filters = {}) {
+        if (!this.eventsData) return;
+
+        let filteredEvents = [...this.eventsData];
+
+        // Appliquer les filtres
+        if (filters.country) {
+            filteredEvents = filteredEvents.filter(e => e.country === filters.country);
         }
-        
-        this.isLoading = false;
-    }
+        if (filters.sector) {
+            filteredEvents = filteredEvents.filter(e => e.company_sector === filters.sector);
+        }
+        if (filters.type) {
+            filteredEvents = filteredEvents.filter(e => e.event_type === filters.type);
+        }
+        if (filters.search) {
+            const searchTerm = filters.search.toLowerCase();
+            filteredEvents = filteredEvents.filter(e => 
+                e.title.toLowerCase().includes(searchTerm) ||
+                e.description.toLowerCase().includes(searchTerm) ||
+                e.company_name.toLowerCase().includes(searchTerm)
+            );
+        }
 
-    // 📋 Créer un élément de liste d'événement
-    createEventListItem(event) {
-        const div = document.createElement('div');
-        div.className = 'event-card bg-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200 overflow-hidden';
-        
-        const startDate = new Date(event.start_date);
-        const endDate = new Date(event.end_date);
-        const isInternational = event.scope === 'international';
-        const timeUntil = this.getTimeUntilEvent(startDate);
-        
-        div.innerHTML = `
-            <div class="md:flex">
-                <div class="md:flex-shrink-0">
-                    <div class="h-48 md:h-full md:w-64 bg-gradient-to-br ${isInternational ? 'from-purple-500 to-pink-500' : 'from-blue-500 to-green-500'} flex flex-col justify-center items-center text-white relative">
-                        <div class=\"absolute top-4 left-4\">
-                            <span class=\"bg-white/20 px-3 py-1 rounded-full text-xs font-semibold\">
-                                <i class=\"fas fa-${isInternational ? 'globe' : 'flag'} mr-1\"></i>
-                                ${isInternational ? 'International' : 'National'}
-                            </span>
+        const container = document.getElementById('events-list');
+        if (!container) return;
+
+        if (filteredEvents.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full text-center py-12">
+                    <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">Aucun événement trouvé</h3>
+                    <p class="text-gray-500">Essayez de modifier vos critères de recherche</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = filteredEvents.map(event => `
+            <div class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+                <div class="p-6">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold">
+                                    ${event.company_sector}
+                                </span>
+                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                                    ${event.scope === 'national' ? 'National' : 'International'}
+                                </span>
+                            </div>
+                            <h3 class="text-lg font-bold text-gray-900 mb-2">${event.title}</h3>
+                            <p class="text-gray-600 text-sm mb-3 line-clamp-2">${event.description}</p>
                         </div>
-                        <div class=\"text-center\">
-                            <div class=\"text-3xl font-bold\">${startDate.getDate()}</div>
-                            <div class=\"text-lg\">${this.getMonthName(startDate.getMonth())}</div>
-                            <div class=\"text-2xl font-bold\">${startDate.getFullYear()}</div>
+                    </div>
+                    
+                    <div class="border-t pt-4">
+                        <div class="grid grid-cols-2 gap-4 text-sm">
+                            <div class="flex items-center text-gray-600">
+                                <i class="fas fa-building mr-2 text-blue-500"></i>
+                                <span>${event.company_name}</span>
+                            </div>
+                            <div class="flex items-center text-gray-600">
+                                <i class="fas fa-calendar mr-2 text-green-500"></i>
+                                <span>${new Date(event.start_date).toLocaleDateString('fr-FR')}</span>
+                            </div>
+                            <div class="flex items-center text-gray-600">
+                                <i class="fas fa-map-marker-alt mr-2 text-red-500"></i>
+                                <span>${event.city}, ${event.country}</span>
+                            </div>
+                            <div class="flex items-center text-gray-600">
+                                <i class="fas fa-users mr-2 text-purple-500"></i>
+                                <span>${event.max_participants} participants</span>
+                            </div>
                         </div>
-                        ${timeUntil ? `<div class=\"absolute bottom-4 text-center text-xs bg-white/20 px-3 py-1 rounded-full\">${timeUntil}</div>` : ''}
+                        
+                        <div class="flex items-center justify-between mt-4">
+                            <div class="text-lg font-bold text-blue-600">
+                                ${event.registration_fee === 0 ? 'Gratuit' : `${event.registration_fee}€`}
+                            </div>
+                            <button onclick="window.open('${event.website_url}', '_blank')" 
+                                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                                <i class="fas fa-external-link-alt mr-1"></i>
+                                En savoir plus
+                            </button>
+                        </div>
                     </div>
                 </div>
-                
-                <div class=\"flex-1 p-6\">
-                    <div class=\"flex justify-between items-start mb-4\">
-                        <div class=\"flex-1\">
-                            <h3 class=\"text-xl font-bold text-gray-900 mb-2\">${event.title}</h3>
-                            <p class=\"text-lg text-blue-600 font-semibold mb-1\">${event.company_name}</p>
-                            <span class=\"inline-block bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm\">${event.company_sector}</span>
-                        </div>
-                        <div class=\"flex flex-col space-y-2 ml-4\">
-                            <button onclick=\"app.toggleFavorite(${event.id}, this)\" 
-                                    class=\"bg-pink-100 text-pink-600 p-2 rounded-full hover:bg-pink-200 transition-colors\">
-                                <i class=\"fas fa-heart\"></i>
-                            </button>
-                            <button onclick=\"app.shareEvent(${event.id})\" 
-                                    class=\"bg-blue-100 text-blue-600 p-2 rounded-full hover:bg-blue-200 transition-colors\">
-                                <i class=\"fas fa-share-alt\"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class=\"grid grid-cols-1 md:grid-cols-2 gap-4 mb-4\">
-                        <div class=\"flex items-center text-gray-600\">
-                            <i class=\"fas fa-map-marker-alt mr-2 text-red-500\"></i>
-                            <span>${event.city}, ${event.country}</span>
-                        </div>
-                        <div class=\"flex items-center text-gray-600\">
-                            <i class=\"fas fa-calendar-clock mr-2 text-blue-500\"></i>
-                            <span>${this.formatDateTime(startDate)}</span>
-                        </div>
-                        <div class=\"flex items-center text-gray-600\">
-                            <i class=\"fas fa-users mr-2 text-green-500\"></i>
-                            <span>${event.max_participants ? `${event.max_participants} places` : 'Places illimitées'}</span>
-                        </div>
-                        <div class=\"flex items-center text-gray-600\">
-                            <i class=\"fas fa-euro-sign mr-2 text-yellow-500\"></i>
-                            <span class=\"font-semibold ${event.registration_fee ? 'text-orange-600' : 'text-green-600'}\">\n                                ${event.registration_fee ? `${event.registration_fee} ${event.currency}` : 'Gratuit'}\n                            </span>
-                        </div>
-                    </div>
-                    
-                    <p class=\"text-gray-700 mb-4 line-clamp-3\">${event.description}</p>
-                    
-                    <div class=\"flex flex-wrap gap-2 mb-4\">
-                        <span class=\"bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm\">\n                            <i class=\"fas fa-tag mr-1\"></i>${this.getEventTypeLabel(event.event_type)}\n                        </span>\n                        ${event.categories ? event.categories.split(',').map(cat => \n                            `<span class=\"bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm\">${cat}</span>`\n                        ).join('') : ''}\n                    </div>\n                    \n                    <div class=\"flex justify-between items-center\">\n                        <div class=\"flex space-x-4 text-sm text-gray-500\">\n                            <span><i class=\"fas fa-eye mr-1\"></i>Voir détails</span>\n                            ${event.venue ? `<span><i class=\"fas fa-building mr-1\"></i>${event.venue}</span>` : ''}\n                        </div>\n                        <a href=\"${event.registration_url || '#'}\" \n                           class=\"bg-gradient-to-r ${isInternational ? 'from-purple-600 to-pink-600' : 'from-blue-600 to-green-600'} text-white px-6 py-2 rounded-lg hover:opacity-90 transition-opacity font-semibold\">\n                            <i class=\"fas fa-external-link-alt mr-2\"></i>S'inscrire\n                        </a>\n                    </div>\n                </div>\n            </div>\n        `;\n        \n        return div;\n    }\n\n    // 🗓️ Fonctions utilitaires pour les dates\n    formatDate(date) {\n        return date.toLocaleDateString('fr-FR', {\n            day: 'numeric',\n            month: 'short',\n            year: 'numeric'\n        });\n    }\n\n    formatDateTime(date) {\n        return date.toLocaleDateString('fr-FR', {\n            day: 'numeric',\n            month: 'short',\n            hour: '2-digit',\n            minute: '2-digit'\n        });\n    }\n\n    getMonthName(monthIndex) {\n        const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', \n                       'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];\n        return months[monthIndex];\n    }\n\n    getTimeUntilEvent(eventDate) {\n        const now = new Date();\n        const diff = eventDate - now;\n        \n        if (diff <= 0) return null;\n        \n        const days = Math.floor(diff / (1000 * 60 * 60 * 24));\n        if (days > 30) return `${Math.floor(days/30)} mois`;\n        if (days > 0) return `${days} jours`;\n        \n        const hours = Math.floor(diff / (1000 * 60 * 60));\n        return `${hours}h`;\n    }\n\n    getEventTypeLabel(type) {\n        const labels = {\n            'conference': 'Conférence',\n            'seminar': 'Séminaire',\n            'workshop': 'Atelier',\n            'networking': 'Networking',\n            'product_launch': 'Lancement',\n            'merger': 'Fusion',\n            'ipo': 'Introduction en Bourse',\n            'acquisition': 'Acquisition',\n            'other': 'Autre'\n        };\n        return labels[type] || type;\n    }\n\n    // 🔍 Configuration des event listeners\n    setupEventListeners() {\n        // Recherche en temps réel (debounced)\n        let searchTimeout;\n        document.getElementById('search-input').addEventListener('input', () => {\n            clearTimeout(searchTimeout);\n            searchTimeout = setTimeout(() => this.loadEvents(), 300);\n        });\n\n        // Filtres\n        ['country-filter', 'sector-filter', 'type-filter', 'scope-filter'].forEach(id => {\n            document.getElementById(id).addEventListener('change', () => this.loadEvents());\n        });\n\n        // Raccourcis clavier\n        document.addEventListener('keydown', (e) => {\n            if (e.ctrlKey && e.key === 'k') {\n                e.preventDefault();\n                document.getElementById('search-input').focus();\n            }\n        });\n    }\n\n    // ❤️ Gestion des favoris\n    async toggleFavorite(eventId, button) {\n        try {\n            const response = await fetch(`/api/favorites/${eventId}`, {\n                method: 'POST',\n                headers: {\n                    'Content-Type': 'application/json'\n                },\n                body: JSON.stringify({ userIdentifier: this.userIdentifier })\n            });\n            \n            const data = await response.json();\n            \n            if (data.success) {\n                const icon = button.querySelector('i');\n                if (data.isFavorite) {\n                    icon.className = 'fas fa-heart';\n                    button.classList.remove('text-pink-600');\n                    button.classList.add('text-red-600', 'animate-pulse');\n                    this.showNotification('❤️ Ajouté aux favoris!', 'success');\n                } else {\n                    icon.className = 'far fa-heart';\n                    button.classList.remove('text-red-600', 'animate-pulse');\n                    button.classList.add('text-pink-600');\n                    this.showNotification('💔 Retiré des favoris', 'info');\n                }\n                \n                setTimeout(() => {\n                    button.classList.remove('animate-pulse');\n                }, 1000);\n            }\n        } catch (error) {\n            console.error('❌ Erreur lors de la gestion des favoris:', error);\n            this.showNotification('❌ Erreur lors de la mise à jour des favoris', 'error');\n        }\n    }\n\n    // 🔔 Initialisation des notifications push\n    async initializeNotifications() {\n        if ('serviceWorker' in navigator) {\n            try {\n                const registration = await navigator.serviceWorker.register('/static/sw.js');\n                console.log('✅ Service Worker enregistré:', registration);\n                \n                // Demander la permission pour les notifications\n                if (Notification.permission === 'default') {\n                    this.showNotificationPermissionPrompt();\n                }\n            } catch (error) {\n                console.error('❌ Erreur Service Worker:', error);\n            }\n        }\n    }\n\n    // 📱 Demander la permission pour les notifications\n    showNotificationPermissionPrompt() {\n        const promptDiv = document.createElement('div');\n        promptDiv.className = 'fixed top-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-xl z-50 max-w-sm';\n        promptDiv.innerHTML = `\n            <div class=\"flex items-start space-x-3\">\n                <i class=\"fas fa-bell text-xl mt-1\"></i>\n                <div class=\"flex-1\">\n                    <h4 class=\"font-bold mb-2\">Notifications Kafouyat</h4>\n                    <p class=\"text-sm mb-3\">Recevez des alertes sur les nouveaux événements qui vous intéressent.</p>\n                    <div class=\"flex space-x-2\">\n                        <button onclick=\"app.requestNotificationPermission()\" \n                                class=\"bg-white text-blue-600 px-3 py-1 rounded text-sm font-semibold hover:bg-gray-100\">\n                            Autoriser\n                        </button>\n                        <button onclick=\"this.parentElement.parentElement.parentElement.remove()\" \n                                class=\"bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-400\">\n                            Plus tard\n                        </button>\n                    </div>\n                </div>\n                <button onclick=\"this.parentElement.parentElement.remove()\" \n                        class=\"text-white hover:text-gray-200\">\n                    <i class=\"fas fa-times\"></i>\n                </button>\n            </div>\n        `;\n        \n        document.body.appendChild(promptDiv);\n        \n        // Auto-remove après 10 secondes\n        setTimeout(() => {\n            if (promptDiv.parentElement) {\n                promptDiv.remove();\n            }\n        }, 10000);\n    }\n\n    // 🔔 Demander la permission de notification\n    async requestNotificationPermission() {\n        const permission = await Notification.requestPermission();\n        \n        if (permission === 'granted') {\n            this.showNotification('🔔 Notifications activées! Vous recevrez des alertes sur les nouveaux événements.', 'success');\n            // Ici, on pourrait souscrire l'utilisateur aux notifications push\n        } else {\n            this.showNotification('🔕 Notifications désactivées. Vous pouvez les activer dans les paramètres de votre navigateur.', 'info');\n        }\n        \n        // Supprimer le prompt\n        document.querySelectorAll('.fixed.top-4.right-4').forEach(el => el.remove());\n    }\n\n    // 📤 Partage d'événement\n    async shareEvent(eventId) {\n        try {\n            const eventUrl = `${window.location.origin}/#event-${eventId}`;\n            \n            if (navigator.share) {\n                // Utiliser l'API de partage native si disponible\n                await navigator.share({\n                    title: 'Événement Corporate - Kafouyat Events',\n                    text: 'Découvrez cet événement corporate sur Kafouyat Events',\n                    url: eventUrl\n                });\n            } else {\n                // Fallback: copier dans le presse-papiers\n                await navigator.clipboard.writeText(eventUrl);\n                this.showNotification('🔗 Lien copié dans le presse-papiers!', 'success');\n            }\n        } catch (error) {\n            console.error('❌ Erreur lors du partage:', error);\n            this.showNotification('❌ Erreur lors du partage', 'error');\n        }\n    }\n\n    // 💬 Système de notifications toast\n    showNotification(message, type = 'info') {\n        const notification = document.createElement('div');\n        const colors = {\n            success: 'bg-green-500',\n            error: 'bg-red-500',\n            info: 'bg-blue-500',\n            warning: 'bg-yellow-500'\n        };\n        \n        notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 ${colors[type]} text-white px-6 py-3 rounded-lg shadow-xl z-50 transition-all duration-300`;\n        notification.style.transform = 'translate(-50%, -100px)';\n        notification.innerHTML = `\n            <div class=\"flex items-center space-x-2\">\n                <span>${message}</span>\n                <button onclick=\"this.parentElement.parentElement.remove()\" class=\"ml-2 hover:bg-white/20 rounded p-1\">\n                    <i class=\"fas fa-times text-sm\"></i>\n                </button>\n            </div>\n        `;\n        \n        document.body.appendChild(notification);\n        \n        // Animation d'apparition\n        setTimeout(() => {\n            notification.style.transform = 'translate(-50%, 0)';\n        }, 100);\n        \n        // Auto-remove après 5 secondes\n        setTimeout(() => {\n            notification.style.transform = 'translate(-50%, -100px)';\n            setTimeout(() => {\n                if (notification.parentElement) {\n                    notification.remove();\n                }\n            }, 300);\n        }, 5000);\n    }\n\n    // 📄 Charger plus d'événements\n    loadMoreEvents() {\n        this.loadEvents(true);\n    }\n}\n\n// 🔍 Fonctions globales\nfunction searchEvents() {\n    app.loadEvents();\n}\n\nfunction loadMoreEvents() {\n    app.loadMoreEvents();\n}\n\n// 🚀 Initialisation de l'application au chargement de la page\nlet app;\n\ndocument.addEventListener('DOMContentLoaded', () => {\n    app = new EventFlowApp();\n});\n\n// 📱 Service Worker pour les notifications (basique)\nif ('serviceWorker' in navigator) {\n    window.addEventListener('load', () => {\n        navigator.serviceWorker.register('/static/sw.js')\n            .then(registration => {\n                console.log('✅ SW enregistré:', registration.scope);\n            })\n            .catch(error => {\n                console.log('❌ SW échec:', error);\n            });\n    });\n}"
+            </div>
+        `).join('');
+
+        console.log('📅 Événements chargés:', filteredEvents.length);
+    }
+
+    // 🎧 Configurer les event listeners
+    setupEventListeners() {
+        // Recherche
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.applyFilters();
+            });
+        }
+
+        // Filtres
+        const filters = ['country-filter', 'sector-filter', 'type-filter'];
+        filters.forEach(filterId => {
+            const element = document.getElementById(filterId);
+            if (element) {
+                element.addEventListener('change', () => {
+                    this.applyFilters();
+                });
+            }
+        });
+
+        console.log('🎧 Event listeners configurés');
+    }
+
+    // 🔍 Appliquer tous les filtres
+    applyFilters() {
+        const filters = {
+            search: document.getElementById('search-input')?.value || '',
+            country: document.getElementById('country-filter')?.value || '',
+            sector: document.getElementById('sector-filter')?.value || '',
+            type: document.getElementById('type-filter')?.value || ''
+        };
+
+        this.loadEvents(filters);
+    }
+}
+
+// 🚀 Initialisation de l'application
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🎯 EventFlow - Démarrage de l\'application');
+    window.eventFlowApp = new EventFlowApp();
+});
+
+// 📱 Gestion des erreurs globales
+window.addEventListener('error', (e) => {
+    console.error('❌ Erreur JavaScript:', e.error);
+});
+
+console.log('📦 EventFlow JavaScript chargé');
