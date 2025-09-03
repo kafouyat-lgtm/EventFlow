@@ -283,9 +283,9 @@ class EventFlowApp {
                                     <i class="fas fa-envelope mr-1"></i>
                                     Contact
                                 </a>
-                                <button onclick="window.open('${event.website_url}', '_blank')" 
+                                <button onclick="eventFlowApp.showEventDetails(${event.id})" 
                                         class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                                    <i class="fas fa-external-link-alt mr-1"></i>
+                                    <i class="fas fa-info-circle mr-1"></i>
                                     Détails
                                 </button>
                             </div>
@@ -331,7 +331,121 @@ class EventFlowApp {
             type: document.getElementById('type-filter')?.value || ''
         };
 
+        console.log('🔍 Filtres appliqués:', filters);
         this.loadEvents(filters);
+    }
+
+    // 📄 Afficher les détails d'un événement  
+    showEventDetails(eventId) {
+        const event = this.eventsData.find(e => e.id === eventId);
+        if (!event) return;
+
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
+        modal.onclick = (e) => {
+            if (e.target === modal) this.closeEventDetails();
+        };
+
+        modal.innerHTML = `
+            <div class="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                    ${event.company_sector}
+                                </span>
+                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                                    ${event.scope === 'national' ? 'National' : 'International'}
+                                </span>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-900 mb-2">${event.title}</h2>
+                        </div>
+                        <button onclick="eventFlowApp.closeEventDetails()" 
+                                class="text-gray-400 hover:text-gray-600 text-2xl">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="font-semibold text-gray-900 mb-2">Description</h3>
+                            <p class="text-gray-600">${event.description}</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="font-medium text-gray-900 mb-2">📅 Informations</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div><strong>Date :</strong> ${new Date(event.start_date).toLocaleDateString('fr-FR')}</div>
+                                    <div><strong>Heure :</strong> ${new Date(event.start_date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</div>
+                                    <div><strong>Lieu :</strong> ${event.venue}</div>
+                                    <div><strong>Ville :</strong> ${event.city}, ${event.country}</div>
+                                    <div><strong>Participants :</strong> ${event.max_participants} max</div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h4 class="font-medium text-gray-900 mb-2">🏢 Organisateur</h4>
+                                <div class="space-y-2 text-sm">
+                                    <div><strong>Organisé par :</strong> ${event.organizer_name || event.company_name}</div>
+                                    <div><strong>Secteur :</strong> ${event.company_sector}</div>
+                                    <div><strong>Email :</strong> 
+                                        <a href="mailto:${event.contact_email}" class="text-blue-600 hover:underline">
+                                            ${event.contact_email}
+                                        </a>
+                                    </div>
+                                    ${event.contact_phone ? `<div><strong>Téléphone :</strong> 
+                                        <a href="tel:${event.contact_phone}" class="text-blue-600 hover:underline">
+                                            ${event.contact_phone}
+                                        </a>
+                                    </div>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-semibold text-blue-900">Prix d'inscription</h4>
+                                    <div class="text-2xl font-bold text-blue-600">
+                                        ${event.registration_fee === 0 ? 'GRATUIT' : `${event.registration_fee}€`}
+                                    </div>
+                                    <p class="text-sm text-blue-700">
+                                        Inscription avant le ${new Date(event.registration_deadline).toLocaleDateString('fr-FR')}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex space-x-3">
+                            <a href="mailto:${event.contact_email}?subject=Demande d'information - ${event.title}" 
+                               class="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors text-center">
+                                <i class="fas fa-envelope mr-2"></i>
+                                Contacter l'organisateur
+                            </a>
+                            <button onclick="window.open('${event.website_url}', '_blank')" 
+                                    class="flex-1 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-external-link-alt mr-2"></i>
+                                Site officiel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+        document.body.style.overflow = 'hidden';
+    }
+
+    // ❌ Fermer les détails d'événement
+    closeEventDetails() {
+        const modal = document.querySelector('.fixed.inset-0.bg-black');
+        if (modal) {
+            document.body.removeChild(modal);
+            document.body.style.overflow = 'auto';
+        }
     }
 }
 
