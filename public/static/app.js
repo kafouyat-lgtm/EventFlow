@@ -51,10 +51,10 @@ class EventFlowApp {
     // 📊 Charger les statistiques globales
     async loadStats() {
         try {
-            const response = await fetch('/api/stats');
+            const response = await fetch('/events.json');
             const data = await response.json();
             
-            if (data.success) {
+            if (data.stats) {
                 document.getElementById('total-events').textContent = data.stats.totalEvents.toLocaleString();
                 document.getElementById('total-countries').textContent = data.stats.totalCountries.toLocaleString();
                 document.getElementById('upcoming-events').textContent = data.stats.upcomingEvents.toLocaleString();
@@ -91,12 +91,12 @@ class EventFlowApp {
     async loadFilterOptions() {
         try {
             // Charger les pays disponibles
-            const eventsResponse = await fetch('/api/events?limit=1000');
-            const eventsData = await eventsResponse.json();
+            const response = await fetch('/events.json');
+            const data = await response.json();
             
-            if (eventsData.success) {
-                const countries = [...new Set(eventsData.events.map(e => e.country))];
-                const sectors = [...new Set(eventsData.events.map(e => e.company_sector))];
+            if (data.events) {
+                const countries = [...new Set(data.events.map(e => e.country))];
+                const sectors = [...new Set(data.events.map(e => e.company_sector))];
                 
                 this.populateSelect('country-filter', countries);
                 this.populateSelect('sector-filter', sectors);
@@ -120,14 +120,15 @@ class EventFlowApp {
     // ⭐ Charger les événements à la une
     async loadFeaturedEvents() {
         try {
-            const response = await fetch('/api/events?featured=true&limit=6');
+            const response = await fetch('/events.json');
             const data = await response.json();
             
-            if (data.success) {
+            if (data.events) {
                 const container = document.getElementById('featured-events');
                 container.innerHTML = '';
                 
-                data.events.forEach(event => {
+                const featuredEvents = data.events.filter(event => event.featured === 1).slice(0, 6);
+                featuredEvents.forEach(event => {
                     const eventCard = this.createFeaturedEventCard(event);
                     container.appendChild(eventCard);
                 });
@@ -216,58 +217,69 @@ class EventFlowApp {
         this.isLoading = true;
         
         try {
-            // Construire l'URL avec les filtres
-            const params = new URLSearchParams();
-            
-            const search = document.getElementById('search-input').value;
-            const country = document.getElementById('country-filter').value;
-            const sector = document.getElementById('sector-filter').value;
-            const type = document.getElementById('type-filter').value;
-            const scope = document.getElementById('scope-filter').value;
-            
-            if (search) params.append('search', search);
-            if (country) params.append('country', country);
-            if (sector) params.append('sector', sector);
-            if (type) params.append('type', type);
-            if (scope) params.append('scope', scope);
-            
-            params.append('limit', '10');
-            if (append) {
-                params.append('offset', this.currentOffset.toString());
-            } else {
-                this.currentOffset = 0;
-                params.append('offset', '0');
-            }
-            
-            const response = await fetch(`/api/events?${params.toString()}`);
+            const response = await fetch('/events.json');
             const data = await response.json();
             
-            if (data.success) {
+            if (data.events) {
+                // Appliquer les filtres côté client
+                const search = document.getElementById('search-input').value.toLowerCase();
+                const country = document.getElementById('country-filter').value;
+                const sector = document.getElementById('sector-filter').value;
+                const type = document.getElementById('type-filter').value;
+                const scope = document.getElementById('scope-filter').value;
+                
+                let filteredEvents = data.events.filter(event => {
+                    // Filtres
+                    if (country && event.country !== country) return false;
+                    if (sector && event.company_sector !== sector) return false;
+                    if (type && event.event_type !== type) return false;
+                    if (scope && event.scope !== scope) return false;
+                    
+                    // Recherche textuelle
+                    if (search) {
+                        const searchFields = [
+                            event.title,
+                            event.description,
+                            event.company_name,
+                            event.company_sector
+                        ].join(' ').toLowerCase();
+                        
+                        if (!searchFields.includes(search)) return false;
+                    }
+                    
+                    return true;
+                });
+                
                 const container = document.getElementById('events-list');
                 
                 if (!append) {
                     container.innerHTML = '';
+                    this.currentOffset = 0;
                 }
                 
-                data.events.forEach(event => {
+                // Pagination côté client
+                const limit = 10;
+                const eventsToShow = filteredEvents.slice(this.currentOffset, this.currentOffset + limit);
+                
+                eventsToShow.forEach(event => {
                     const eventElement = this.createEventListItem(event);
                     container.appendChild(eventElement);
                 });
                 
-                // Mettre à jour l'offset pour le \"Charger plus\"
-                this.currentOffset += data.events.length;
+                // Mettre à jour l'offset
+                this.currentOffset += eventsToShow.length;
                 
-                // Masquer le bouton si moins de 10 événements retournés
+                // Gérer le bouton \"Charger plus\"
                 const loadMoreBtn = document.getElementById('load-more-btn');
-                if (data.events.length < 10) {
+                if (this.currentOffset >= filteredEvents.length) {
                     loadMoreBtn.style.display = 'none';
                 } else {
                     loadMoreBtn.style.display = 'block';
                 }
                 
-                // Animation d'apparition des nouvelles cartes
+                // Animation d'apparition
                 if (append) {
-                    const newCards = container.querySelectorAll('.event-card:nth-last-child(-n+' + data.events.length + ')');
+                    const newCards = container.querySelectorAll('.event-card:nth-last-child(-n+' + eventsToShow.length + ')');
                     newCards.forEach((card, index) => {
                         card.style.opacity = '0';
                         card.style.transform = 'translateY(20px)';
