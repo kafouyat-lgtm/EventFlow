@@ -134,6 +134,35 @@
       "visibility": "public",
       "featured": 0,
       "categories": "Technologie,Finance"
+    },
+    {
+      "id": 6,
+      "title": "5ème Édition du Gala des PME",
+      "description": "Célébration annuelle des petites et moyennes entreprises africaines. Remise de prix, networking premium et opportunités de partenariats stratégiques.",
+      "company_name": "Kafouyat Events",
+      "company_sector": "Business", 
+      "event_type": "networking",
+      "scope": "national",
+      "country": "Côte d'Ivoire",
+      "city": "Abidjan",
+      "venue": "Hôtel Ivoire Intercontinental",
+      "latitude": 5.3600,
+      "longitude": -3.9700,
+      "start_date": "2026-09-26T18:00:00Z",
+      "end_date": "2026-09-26T23:00:00Z",
+      "registration_deadline": "2026-09-15T23:59:59Z",
+      "max_participants": 500,
+      "registration_fee": 75.00,
+      "currency": "EUR",
+      "contact_email": "contact@kafouyat.com",
+      "contact_phone": "+225 07 XX XX XX XX",
+      "organizer_name": "Kafouyat",
+      "website_url": "https://gala-pme.kafouyat.com",
+      "registration_url": "https://tickets.gala-pme.ci",
+      "status": "published",
+      "visibility": "public",
+      "featured": 1,
+      "categories": "Business,Networking"
     }
   ],
   "categories": [
@@ -144,9 +173,9 @@
     {"id": 5, "name": "Énergie", "color": "#8B5CF6"}
   ],
   "stats": {
-    "totalEvents": 5,
-    "totalCountries": 3,
-    "totalSectors": 5,
-    "upcomingEvents": 5
+    "totalEvents": 6,
+    "totalCountries": 4,
+    "totalSectors": 6,
+    "upcomingEvents": 6
   }
 }

@@ -147,13 +147,23 @@ class EventFlowApp {
                     </div>
                     <h3 class="text-xl font-bold text-gray-900 mb-2">${event.title}</h3>
                     <p class="text-gray-600 mb-4 line-clamp-2">${event.description}</p>
-                    <div class="flex items-center justify-between">
+                    <div class="space-y-2">
                         <div class="flex items-center text-gray-500">
                             <i class="fas fa-map-marker-alt mr-2"></i>
                             <span>${event.city}, ${event.country}</span>
                         </div>
-                        <div class="text-blue-600 font-bold">
-                            ${event.registration_fee === 0 ? 'Gratuit' : `${event.registration_fee}€`}
+                        <div class="flex items-center text-gray-500">
+                            <i class="fas fa-user-tie mr-2"></i>
+                            <span>Organisé par ${event.organizer_name || event.company_name}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="text-blue-600 font-bold">
+                                ${event.registration_fee === 0 ? 'Gratuit' : `${event.registration_fee}€`}
+                            </div>
+                            <a href="mailto:${event.contact_email}" class="text-green-600 hover:text-green-700 font-medium">
+                                <i class="fas fa-envelope mr-1"></i>
+                                Contacter
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -240,15 +250,45 @@ class EventFlowApp {
                             </div>
                         </div>
                         
+                        <div class="bg-gray-50 p-3 rounded-lg mt-4">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-medium text-gray-700">Organisateur :</span>
+                                <span class="text-sm font-bold text-gray-900">${event.organizer_name || event.company_name}</span>
+                            </div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm text-gray-600">Contact :</span>
+                                <a href="mailto:${event.contact_email}" class="text-sm text-green-600 hover:text-green-700 font-medium">
+                                    <i class="fas fa-envelope mr-1"></i>
+                                    ${event.contact_email}
+                                </a>
+                            </div>
+                            ${event.contact_phone ? `
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm text-gray-600">Téléphone :</span>
+                                <a href="tel:${event.contact_phone}" class="text-sm text-blue-600 hover:text-blue-700">
+                                    <i class="fas fa-phone mr-1"></i>
+                                    ${event.contact_phone}
+                                </a>
+                            </div>
+                            ` : ''}
+                        </div>
+                        
                         <div class="flex items-center justify-between mt-4">
                             <div class="text-lg font-bold text-blue-600">
                                 ${event.registration_fee === 0 ? 'Gratuit' : `${event.registration_fee}€`}
                             </div>
-                            <button onclick="window.open('${event.website_url}', '_blank')" 
-                                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                                <i class="fas fa-external-link-alt mr-1"></i>
-                                En savoir plus
-                            </button>
+                            <div class="flex space-x-2">
+                                <a href="mailto:${event.contact_email}?subject=Demande d'information - ${event.title}" 
+                                   class="bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
+                                    <i class="fas fa-envelope mr-1"></i>
+                                    Contact
+                                </a>
+                                <button onclick="window.open('${event.website_url}', '_blank')" 
+                                        class="bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                                    <i class="fas fa-external-link-alt mr-1"></i>
+                                    Détails
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
