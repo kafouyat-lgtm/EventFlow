@@ -1,0 +1,14 @@
+node_modules/
+.git/
+src/
+migrations/
+.wrangler/
+dist/
+*.log
+.env
+.dev.vars
+wrangler.jsonc
+ecosystem.config.cjs
+server.js
+tsconfig.json
+vite.config.ts
