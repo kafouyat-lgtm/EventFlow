@@ -1,10 +1,5 @@
 {
   "version": 2,
-  "framework": null,
-  "buildCommand": "echo 'Static site - no build required'",
-  "outputDirectory": "public",
-  "installCommand": "echo 'No dependencies to install for static site'",
-  "functions": {},
   "routes": [
     {
       "src": "/static/(.*)",
@@ -25,7 +20,7 @@
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=86400"
+          "value": "public, max-age=3600"
         }
       ]
     },
